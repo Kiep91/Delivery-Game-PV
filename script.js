@@ -1,5 +1,7 @@
-// Delivery Route Master starter code
-var map = L.map('map').setView([0, 0], 2);
+// script.js – Updated to use 18 fixed delivery locations within the Greater Toronto Area
+
+// Initialise the Leaflet map and set a default view centred around the GTA
+var map = L.map('map').setView([43.7, -79.4], 10);
 
 // Add OpenStreetMap tile layer
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -7,26 +9,31 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap'
 }).addTo(map);
 
-// Data structure for points
-var points = [];
+// Data structure for points: 18 fixed locations with predefined urgency and size
+var points = [{"lat": 43.6532, "lng": -79.3832, "urgency": "medium", "size": "medium"}, {"lat": 43.7615, "lng": -79.4111, "urgency": "low", "size": "small"}, {"lat": 43.775, "lng": -79.2315, "urgency": "high", "size": "large"}, {"lat": 43.654, "lng": -79.527, "urgency": "medium", "size": "small"}, {"lat": 43.589, "lng": -79.6441, "urgency": "low", "size": "medium"}, {"lat": 43.7315, "lng": -79.7624, "urgency": "high", "size": "medium"}, {"lat": 43.8561, "lng": -79.337, "urgency": "medium", "size": "large"}, {"lat": 43.8372, "lng": -79.5083, "urgency": "low", "size": "small"}, {"lat": 43.9488, "lng": -79.4357, "urgency": "high", "size": "medium"}, {"lat": 43.4675, "lng": -79.6877, "urgency": "medium", "size": "large"}, {"lat": 43.3255, "lng": -79.799, "urgency": "low", "size": "small"}, {"lat": 43.8971, "lng": -78.858, "urgency": "high", "size": "medium"}, {"lat": 43.8971, "lng": -78.8658, "urgency": "medium", "size": "medium"}, {"lat": 43.8503, "lng": -79.024, "urgency": "low", "size": "small"}, {"lat": 43.838, "lng": -79.0897, "urgency": "high", "size": "large"}, {"lat": 44.0, "lng": -79.4661, "urgency": "medium", "size": "medium"}, {"lat": 44.0592, "lng": -79.4612, "urgency": "low", "size": "medium"}, {"lat": 43.5184, "lng": -79.877, "urgency": "high", "size": "small"}];
 var markers = [];
 var routeLine = null;
 
-// Function to update score display
+// Populate the map with predefined markers
+points.forEach(function(pt) {
+    var marker = L.marker([pt.lat, pt.lng]).addTo(map);
+    marker.bindPopup('Urgency: ' + pt.urgency + '<br>Size: ' + pt.size);
+    markers.push(marker);
+});
+
+// Function to update the score display
 function updateScore(distance) {
-    // Simple scoring: lower distance means higher score
     var score = (distance > 0) ? Math.max(0, Math.floor(10000 / distance)) : 0;
     document.getElementById('score').innerText = 'Score: ' + score;
 }
 
-// Nearest Neighbor TSP heuristic
+// Nearest Neighbour heuristic TSP solver
 function computeRoute(startLatLng) {
     if (points.length === 0) return [];
     var unvisited = points.slice();
     var route = [];
     var current = startLatLng;
     while (unvisited.length > 0) {
-        // find nearest neighbor
         var nearestIndex = 0;
         var nearestDist = current.distanceTo(L.latLng(unvisited[0].lat, unvisited[0].lng));
         for (var i = 1; i < unvisited.length; i++) {
@@ -43,7 +50,7 @@ function computeRoute(startLatLng) {
     return route;
 }
 
-// Function to draw the route on the map
+// Draw the computed route onto the map and update the score
 function drawRoute(route, startLatLng) {
     var latlngs = [];
     latlngs.push(startLatLng);
@@ -54,7 +61,6 @@ function drawRoute(route, startLatLng) {
         map.removeLayer(routeLine);
     }
     routeLine = L.polyline(latlngs, {color: 'blue'}).addTo(map);
-    // Calculate distance
     var distance = 0;
     for (var i = 0; i < latlngs.length-1; i++) {
         var a = L.latLng(latlngs[i][0], latlngs[i][1]);
@@ -64,32 +70,13 @@ function drawRoute(route, startLatLng) {
     updateScore(distance);
 }
 
-// Map click event: add marker and ask for attributes
-map.on('click', function(e) {
-    var urgency = prompt('Enter package urgency (low/medium/high):', 'low');
-    if (urgency === null) return; // cancelled
-    var size = prompt('Enter package size (small/medium/large):', 'small');
-    if (size === null) return;
-    var marker = L.marker(e.latlng).addTo(map);
-    marker.bindPopup('Urgency: ' + urgency + '<br>Size: ' + size);
-    markers.push(marker);
-    points.push({lat: e.latlng.lat, lng: e.latlng.lng, urgency: urgency, size: size});
-});
-
-// Optimize button: compute and draw route from map center or first point
+// Hook up the Optimize button: start at the first point or map centre
 document.getElementById('optimizeBtn').addEventListener('click', function() {
-    // Starting location: first point or map center if none
     var startLatLng;
     if (points.length > 0) {
         startLatLng = L.latLng(points[0].lat, points[0].lng);
     } else {
         startLatLng = map.getCenter();
-    }
-    // Copy points excluding starting point if included in list
-    var listForRoute = points.slice();
-    // If first point included, remove it from list
-    if (listForRoute.length > 0 && listForRoute[0].lat === startLatLng.lat && listForRoute[0].lng === startLatLng.lng) {
-        listForRoute.splice(0,1);
     }
     var route = computeRoute(startLatLng);
     drawRoute(route, startLatLng);
