@@ -4,11 +4,17 @@
 var map = L.map('map').setView([43.7, -79.4], 10);
 // Add tile layer
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
-
 // Define static start/end (Toronto City Hall)
 var startPoint = {lat: 43.6532, lng: -79.3832};
-var startMarker = L.circleMarker([startPoint.lat, startPoint.lng], {radius: 8, color:'black', fillColor:'black', fillOpacity:1}).addTo(map).bindPopup('Start/End');
-// Initialize userRoute with start point
+var startMarker = L.circleMarker([startPoint.lat, startPoint.lng], {
+    radius: 8,
+    color: 'black',
+    fillColor: 'black',
+    fillOpacity: 1
+}).addTo(map).bindPopup('Start/End');
+// Initialize route with start point
+var userRoute = [startPoint];
+
 // Points array
 var points = [
     {"lat": 43.768884, "lng": -79.554684},
@@ -38,7 +44,6 @@ var points = [
     {"lat": 43.694429, "lng": -79.164607}
 ];
 var markers = [];
-var userRoute = [startPoint];
 var routeLine = null;
 
 points.forEach(function(pt) {
@@ -56,6 +61,10 @@ function updateRoute() {
     if (routeLine) map.removeLayer(routeLine);
     var latlngs = [];
     userRoute.forEach(function(pt) { latlngs.push([pt.lat, pt.lng]); });
+        // Loop back to start when all locations selected
+        if ((userRoute.length - 1) === points.length) {
+            latlngs.push([startPoint.lat, startPoint.lng]);
+        }
     if (latlngs.length > 0) routeLine = L.polyline(latlngs, {color: 'blue'}).addTo(map);
 }
 
@@ -98,11 +107,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 // Finish button
 document.getElementById('finishBtn').addEventListener('click', function() {
-    if ((userRoute.length - 1) < points.length) {
+    if (userRoute.length < points.length) {
         alert('Please select all ' + points.length + ' locations before scoring. Selected: ' + userRoute.length);
         return;
     }
-    var dist = calculateDistance(userRoute.concat([startPoint]));
+    var dist = calculateDistance(userRoute);
     var score = calcScore(dist);
     updateScoreDisplay(score);
     alert('Total distance: ' + Math.floor(dist) + ' meters. Score: ' + score);
@@ -114,7 +123,7 @@ document.getElementById('finishBtn').addEventListener('click', function() {
 });
 // Reset button
 document.getElementById('resetBtn').addEventListener('click', function() {
-    userRoute = [startPoint];
+    userRoute = [];
     if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
     updateScoreDisplay(0);
 });
