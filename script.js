@@ -4,6 +4,11 @@
 var map = L.map('map').setView([43.7, -79.4], 10);
 // Add tile layer
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+
+// Define static start and end point and draw black marker
+var startPoint = {lat: 43.6532, lng: -79.3832};
+var startMarker = L.circleMarker([startPoint.lat, startPoint.lng], { radius: 8, color:'black', fillColor:'black', fillOpacity:1 }).addTo(map).bindPopup('Start/End');
+
 // Define approximate city boundaries for Toronto and Mississauga
 var torontoBounds = {latMin: 43.64, latMax: 43.85, lngMin: -79.65, lngMax: -79.1};
 var mississaugaBounds = {latMin: 43.50, latMax: 43.65, lngMin: -79.85, lngMax: -79.45};
@@ -11,7 +16,6 @@ function inCity(pt) {
     return ((pt.lat >= torontoBounds.latMin && pt.lat <= torontoBounds.latMax && pt.lng >= torontoBounds.lngMin && pt.lng <= torontoBounds.lngMax) ||
             (pt.lat >= mississaugaBounds.latMin && pt.lat <= mississaugaBounds.latMax && pt.lng >= mississaugaBounds.lngMin && pt.lng <= mississaugaBounds.lngMax));
 }
-
 // Points array
 var points = [
     {"lat": 43.768884, "lng": -79.554684},
@@ -40,11 +44,12 @@ var points = [
     {"lat": 43.736797, "lng": -79.492623},
     {"lat": 43.694429, "lng": -79.164607}
 ];
+// Filter delivery points to within Toronto & Mississauga
 var filteredPoints = points.filter(inCity);
 var pointsCount = filteredPoints.length;
 
 var markers = [];
-var userRoute = [];
+var userRoute = [startPoint];
 var routeLine = null;
 
 filteredPoints.forEach(function(pt) {
@@ -104,11 +109,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 // Finish button
 document.getElementById('finishBtn').addEventListener('click', function() {
-    if (userRoute.length < pointsCount) {
+    if ((userRoute.length - 1) < pointsCount) {
         alert('Please select all ' + pointsCount + ' locations before scoring. Selected: ' + userRoute.length);
         return;
     }
-    var dist = calculateDistance(userRoute);
+    var dist = calculateDistance(userRoute.concat([startPoint]));
     var score = calcScore(dist);
     updateScoreDisplay(score);
     alert('Total distance: ' + Math.floor(dist) + ' meters. Score: ' + score);
@@ -120,7 +125,7 @@ document.getElementById('finishBtn').addEventListener('click', function() {
 });
 // Reset button
 document.getElementById('resetBtn').addEventListener('click', function() {
-    userRoute = [];
+    userRoute = [startPoint];
     if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
     updateScoreDisplay(0);
 });
