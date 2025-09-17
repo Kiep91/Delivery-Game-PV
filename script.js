@@ -4,13 +4,50 @@
 var map = L.map('map').setView([43.7, -79.4], 10);
 // Add tile layer
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+// Define approximate city boundaries for Toronto and Mississauga
+var torontoBounds = {latMin: 43.64, latMax: 43.85, lngMin: -79.65, lngMax: -79.1};
+var mississaugaBounds = {latMin: 43.50, latMax: 43.65, lngMin: -79.85, lngMax: -79.45};
+function inCity(pt) {
+    return ((pt.lat >= torontoBounds.latMin && pt.lat <= torontoBounds.latMax && pt.lng >= torontoBounds.lngMin && pt.lng <= torontoBounds.lngMax) ||
+            (pt.lat >= mississaugaBounds.latMin && pt.lat <= mississaugaBounds.latMax && pt.lng >= mississaugaBounds.lngMin && pt.lng <= mississaugaBounds.lngMax));
+}
+
 // Points array
-var points = [{"lat": 43.6532, "lng": -79.3832}, {"lat": 43.7615, "lng": -79.4111}, {"lat": 43.775, "lng": -79.2315}, {"lat": 43.654, "lng": -79.527}, {"lat": 43.589, "lng": -79.6441}, {"lat": 43.7315, "lng": -79.7624}, {"lat": 43.8561, "lng": -79.337}, {"lat": 43.8372, "lng": -79.5083}, {"lat": 43.9488, "lng": -79.4357}, {"lat": 43.4675, "lng": -79.6877}, {"lat": 43.3255, "lng": -79.799}, {"lat": 43.8971, "lng": -78.858}, {"lat": 43.8971, "lng": -78.8658}, {"lat": 43.8503, "lng": -79.024}, {"lat": 43.838, "lng": -79.0897}, {"lat": 44.0, "lng": -79.4661}, {"lat": 44.0592, "lng": -79.4612}, {"lat": 43.5184, "lng": -79.877}];
+var points = [
+    {"lat": 43.768884, "lng": -79.554684},
+    {"lat": 43.751591, "lng": -79.404623},
+    {"lat": 43.684114, "lng": -79.325101},
+    {"lat": 43.651783, "lng": -79.189145},
+    {"lat": 43.702255, "lng": -79.165027},
+    {"lat": 43.680987, "lng": -79.385346},
+    {"lat": 43.756760, "lng": -79.210611},
+    {"lat": 43.660663, "lng": -79.482778},
+    {"lat": 43.695319, "lng": -79.237737},
+    {"lat": 43.716676, "lng": -79.353085},
+    {"lat": 43.781623, "lng": -79.593681},
+    {"lat": 43.700937, "lng": -79.276133},
+    {"lat": 43.656368, "lng": -79.420529},
+    {"lat": 43.751161, "lng": -79.228820},
+    {"lat": 43.723674, "lng": -79.299331},
+    {"lat": 43.650101, "lng": -79.599486},
+    {"lat": 43.781949, "lng": -79.377890},
+    {"lat": 43.796557, "lng": -79.209579},
+    {"lat": 43.762043, "lng": -79.490240},
+    {"lat": 43.780433, "lng": -79.453658},
+    {"lat": 43.662030, "lng": -79.208288},
+    {"lat": 43.745966, "lng": -79.514020},
+    {"lat": 43.779768, "lng": -79.344620},
+    {"lat": 43.736797, "lng": -79.492623},
+    {"lat": 43.694429, "lng": -79.164607}
+];
+var filteredPoints = points.filter(inCity);
+var pointsCount = filteredPoints.length;
+
 var markers = [];
 var userRoute = [];
 var routeLine = null;
 
-points.forEach(function(pt) {
+filteredPoints.forEach(function(pt) {
     var marker = L.marker([pt.lat, pt.lng]).addTo(map);
     marker.on('click', function() {
         if (userRoute.indexOf(pt) === -1) {
@@ -67,8 +104,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 // Finish button
 document.getElementById('finishBtn').addEventListener('click', function() {
-    if (userRoute.length < points.length) {
-        alert('Please select all ' + points.length + ' locations before scoring. Selected: ' + userRoute.length);
+    if (userRoute.length < pointsCount) {
+        alert('Please select all ' + pointsCount + ' locations before scoring. Selected: ' + userRoute.length);
         return;
     }
     var dist = calculateDistance(userRoute);
